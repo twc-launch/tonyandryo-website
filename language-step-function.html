@@ -18,8 +18,10 @@
   }
   .container { max-width: 900px; width: 100%; }
   h1 { font-size: 1.8rem; font-weight: 700; color: #111; margin-bottom: 6px; }
-  .subtitle { font-size: 0.9rem; color: #888; margin-bottom: 12px; }
-  .subtitle a { color: #888; text-decoration: none; border-bottom: 1px solid #ccc; }
+  .subtitle { margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .subtitle a { text-decoration: none; display: flex; align-items: center; gap: 10px; }
+  .subtitle img { width: 36px; height: 36px; border-radius: 50%; }
+  .subtitle span { font-size: 0.85rem; color: #888; }
   .desc {
     font-size: 0.88rem; color: #666; line-height: 1.7;
     margin-bottom: 36px; max-width: 720px;
@@ -84,7 +86,7 @@
 <body>
 <div class="container">
   <h1>語学習得の階段関数</h1>
-  <p class="subtitle"><a href="https://youtube.com/@offreco" target="_blank">オフレコ戦略会議</a> — Tony & Ryo</p>
+  <div class="subtitle"><a href="https://youtube.com/@offreco" target="_blank"><img src="offreco-logo.jpg" alt="オフレコ戦略会議"><span>オフレコ戦略会議 — Tony & Ryo</span></a></div>
   <p class="desc">語学の上達は直線的ではない。「階段関数」のように、長い横ばいの後に突然レベルが上がる。各ステップに必要な努力量は指数関数的に増えるが、一度上がったレベルは落ちない。</p>
 
   <div class="graph-container">
@@ -300,7 +302,7 @@
     </div>
   </div>
 
-  <p class="footer"><a href="https://youtube.com/@offreco" target="_blank">オフレコ戦略会議</a> · Tony & Ryo</p>
+  <div class="footer"><a href="https://youtube.com/@offreco" target="_blank" style="display:inline-flex; align-items:center; gap:6px;"><img src="offreco-logo.jpg" alt="" style="width:20px; height:20px; border-radius:50%;"><span>オフレコ戦略会議</span></a></div>
 </div>
 </body>
 </html>
