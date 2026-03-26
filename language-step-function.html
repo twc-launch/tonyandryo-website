@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>語学習得の階段関数 — オフレコ戦略会議</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #fff;
+    color: #222;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+  }
+  .container { max-width: 900px; width: 100%; }
+  h1 { font-size: 1.8rem; font-weight: 700; color: #111; margin-bottom: 6px; }
+  .subtitle { font-size: 0.9rem; color: #888; margin-bottom: 12px; }
+  .subtitle a { color: #888; text-decoration: none; border-bottom: 1px solid #ccc; }
+  .desc {
+    font-size: 0.88rem; color: #666; line-height: 1.7;
+    margin-bottom: 36px; max-width: 720px;
+  }
+  .graph-container {
+    position: relative; width: 100%;
+    aspect-ratio: 16/9;
+    margin-bottom: 48px;
+  }
+  svg.graph { width: 100%; height: 100%; }
+  .axis-line { stroke: #222; stroke-width: 2; }
+  .axis-arrow { fill: #222; }
+  .grid-line { stroke: #e8e8e8; stroke-width: 0.8; }
+  .step-line { stroke: #222; stroke-width: 2.5; }
+  .dot-closed { fill: #222; stroke: #222; stroke-width: 2; }
+  .dot-open { fill: #fff; stroke: #222; stroke-width: 2.5; }
+  .axis-title {
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Kaku Gothic ProN', sans-serif;
+    font-size: 13px; fill: #222; font-weight: 600;
+  }
+  .hour-label {
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Kaku Gothic ProN', sans-serif;
+    font-size: 10.5px; fill: #999;
+  }
+  .level-label {
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Kaku Gothic ProN', sans-serif;
+    font-size: 11.5px; fill: #444; font-weight: 500;
+  }
+
+  .insights {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 40px;
+  }
+  @media (max-width: 600px) {
+    .insights { grid-template-columns: 1fr; }
+    h1 { font-size: 1.4rem; }
+  }
+  .insight-card {
+    background: #fafafa; border: 1px solid #eee;
+    border-radius: 10px; padding: 18px;
+  }
+  .insight-card h3 { font-size: 0.88rem; color: #222; margin-bottom: 5px; }
+  .insight-card p { font-size: 0.8rem; color: #777; line-height: 1.6; }
+
+  .steps-table { width: 100%; margin-bottom: 40px; }
+  .steps-table h2 {
+    font-size: 1.15rem; color: #222; margin-bottom: 14px;
+    border-bottom: 2px solid #222; padding-bottom: 6px; display: inline-block;
+  }
+  .step-row {
+    display: grid; grid-template-columns: 100px 1fr;
+    gap: 14px; padding: 12px 0; border-bottom: 1px solid #f0f0f0;
+  }
+  .step-row:last-child { border-bottom: none; }
+  .step-hours { font-size: 0.82rem; color: #999; padding-top: 2px; font-weight: 600; }
+  .step-desc h4 { font-size: 0.9rem; color: #222; margin-bottom: 2px; }
+  .step-desc p { font-size: 0.78rem; color: #888; line-height: 1.5; }
+
+  .footer { text-align: center; color: #ccc; font-size: 0.72rem; margin-top: 40px; }
+  .footer a { color: #aaa; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>語学習得の階段関数</h1>
+  <p class="subtitle"><a href="https://youtube.com/@offreco" target="_blank">オフレコ戦略会議</a> — Tony & Ryo</p>
+  <p class="desc">語学の上達は直線的ではない。「階段関数」のように、長い横ばいの後に突然レベルが上がる。各ステップに必要な努力量は指数関数的に増えるが、一度上がったレベルは落ちない。</p>
+
+  <div class="graph-container">
+    <svg class="graph" viewBox="0 0 900 500" preserveAspectRatio="xMidYMid meet">
+
+      <!--
+        Hours: 10, 50, 200, 500, 1500
+        Scale: graph x from 90 to 860 = 770px for 1700hrs
+        1hr = 770/1700 = 0.453px
+
+        0h    → x=90
+        10h   → x=90 + 4.5 = 95
+        50h   → x=90 + 22.6 = 113
+        200h  → x=90 + 90.6 = 181
+        500h  → x=90 + 226.5 = 317
+        1500h → x=90 + 679.4 = 769
+
+        Truncate at ~1600h to keep 完全なビジネス short
+
+        Y levels:
+        Zero: y=440
+        サバイバル: y=370
+        観光・軽い交流: y=300
+        日常会話: y=230
+        限定的ビジネス: y=160
+        完全なビジネス: y=90
+      -->
+
+      <!-- Horizontal grid lines -->
+      <line class="grid-line" x1="90" y1="370" x2="840" y2="370" />
+      <line class="grid-line" x1="90" y1="300" x2="840" y2="300" />
+      <line class="grid-line" x1="90" y1="230" x2="840" y2="230" />
+      <line class="grid-line" x1="90" y1="160" x2="840" y2="160" />
+      <line class="grid-line" x1="90" y1="90" x2="840" y2="90" />
+
+      <!-- Vertical grid lines at jump points -->
+      <line class="grid-line" x1="95" y1="440" x2="95" y2="60" />
+      <line class="grid-line" x1="113" y1="440" x2="113" y2="60" />
+      <line class="grid-line" x1="181" y1="440" x2="181" y2="60" />
+      <line class="grid-line" x1="317" y1="440" x2="317" y2="60" />
+      <line class="grid-line" x1="769" y1="440" x2="769" y2="60" />
+
+      <!-- ==================== STEP FUNCTION ==================== -->
+
+      <!-- Level 0: 0 → 10h -->
+      <line class="step-line" x1="90" y1="440" x2="95" y2="440" />
+      <circle class="dot-closed" cx="90" cy="440" r="4" />
+
+      <!-- Jump at 10h → サバイバル -->
+      <circle class="dot-open" cx="95" cy="440" r="4" />
+      <circle class="dot-closed" cx="95" cy="370" r="4" />
+
+      <!-- サバイバル: 10h → 50h -->
+      <line class="step-line" x1="95" y1="370" x2="113" y2="370" />
+
+      <!-- Jump at 50h → 観光 -->
+      <circle class="dot-open" cx="113" cy="370" r="4" />
+      <circle class="dot-closed" cx="113" cy="300" r="4" />
+
+      <!-- 観光: 50h → 200h -->
+      <line class="step-line" x1="113" y1="300" x2="181" y2="300" />
+
+      <!-- Jump at 200h → 日常会話 -->
+      <circle class="dot-open" cx="181" cy="300" r="4" />
+      <circle class="dot-closed" cx="181" cy="230" r="4" />
+
+      <!-- 日常会話: 200h → 500h -->
+      <line class="step-line" x1="181" y1="230" x2="317" y2="230" />
+
+      <!-- Jump at 500h → 限定的ビジネス -->
+      <circle class="dot-open" cx="317" cy="230" r="4" />
+      <circle class="dot-closed" cx="317" cy="160" r="4" />
+
+      <!-- 限定的ビジネス: 500h → 1500h (HUGE step) -->
+      <line class="step-line" x1="317" y1="160" x2="769" y2="160" />
+
+      <!-- Jump at 1500h → 完全なビジネス -->
+      <circle class="dot-open" cx="769" cy="160" r="4" />
+      <circle class="dot-closed" cx="769" cy="90" r="4" />
+
+      <!-- 完全なビジネス: short plateau, truncated -->
+      <line class="step-line" x1="769" y1="90" x2="830" y2="90" />
+
+      <!-- ==================== LEVEL LABELS (on top of lines) ==================== -->
+      <text class="level-label" x="97" y="364">サバイバル</text>
+      <text class="level-label" x="116" y="294">観光・軽い交流</text>
+      <text class="level-label" x="184" y="224">日常会話</text>
+      <text class="level-label" x="440" y="154">限定的ビジネス</text>
+      <text class="level-label" x="775" y="84">完全なビジネス</text>
+
+      <!-- ==================== HOUR LABELS ==================== -->
+      <line stroke="#bbb" stroke-width="0.8" x1="95" y1="440" x2="95" y2="447" />
+      <line stroke="#bbb" stroke-width="0.8" x1="113" y1="440" x2="113" y2="447" />
+      <line stroke="#bbb" stroke-width="0.8" x1="181" y1="440" x2="181" y2="447" />
+      <line stroke="#bbb" stroke-width="0.8" x1="317" y1="440" x2="317" y2="447" />
+      <line stroke="#bbb" stroke-width="0.8" x1="769" y1="440" x2="769" y2="447" />
+
+      <text class="hour-label" x="95" y="462" text-anchor="middle">10h</text>
+      <text class="hour-label" x="113" y="462" text-anchor="middle">50h</text>
+      <text class="hour-label" x="181" y="462" text-anchor="middle">200h</text>
+      <text class="hour-label" x="317" y="462" text-anchor="middle">500h</text>
+      <text class="hour-label" x="769" y="462" text-anchor="middle">1500h</text>
+
+      <!-- ==================== AXES ==================== -->
+      <line class="axis-line" x1="90" y1="440" x2="855" y2="440" />
+      <line class="axis-line" x1="90" y1="440" x2="90" y2="55" />
+      <polygon class="axis-arrow" points="855,435 855,445 870,440" />
+      <polygon class="axis-arrow" points="85,55 95,55 90,40" />
+
+      <!-- Axis titles -->
+      <text class="axis-title" x="470" y="490" text-anchor="middle">学習時間・努力量</text>
+      <text class="axis-title" x="35" y="250" text-anchor="middle" transform="rotate(-90, 35, 250)">実用性</text>
+
+    </svg>
+  </div>
+
+  <!-- Insight cards -->
+  <div class="insights">
+    <div class="insight-card">
+      <h3>🪜 直線的じゃない</h3>
+      <p>努力に比例して上達すると期待するが、現実は長い横ばいの後に突然跳ね上がる。この「ギャップ」で諦める人が多い。</p>
+    </div>
+    <div class="insight-card">
+      <h3>🚀 跳躍の瞬間</h3>
+      <p>次のステップに上がる瞬間は突然やってくる。ある日「あ、わかる」と感じる。それが跳躍の瞬間。</p>
+    </div>
+    <div class="insight-card">
+      <h3>🔒 落ちにくい</h3>
+      <p>一度新しいステップに到達すると、サボっても前のレベルには戻らない。身についた実用性は消えない。</p>
+    </div>
+    <div class="insight-card">
+      <h3>⏱️ 最初の一歩は軽い</h3>
+      <p>たった10時間で「サバイバル」に到達。50時間（1学期分）で観光レベル。最初のステップのROIは異常に高い。</p>
+    </div>
+  </div>
+
+  <!-- Time context -->
+  <div class="steps-table">
+    <h2>実際にどれくらいの時間？</h2>
+    <p style="font-size:0.85rem; color:#666; line-height:1.7; margin-bottom:20px;">「時間」と言われてもピンとこない。身近な活動と比べてみよう。</p>
+    <div style="display:grid; grid-template-columns:80px 1fr; gap:0; font-size:0.82rem;">
+
+      <div style="font-weight:700; color:#222; padding:12px 0; border-bottom:1px solid #eee;">10時間</div>
+      <div style="padding:12px 0; border-bottom:1px solid #eee; color:#666;">
+        Netflix 5本分 ／ 週末2日 ／ 1日30分×3週間<br>
+        <span style="color:#222; font-weight:500;">→ サバイバル達成</span>
+      </div>
+
+      <div style="font-weight:700; color:#222; padding:12px 0; border-bottom:1px solid #eee;">50時間</div>
+      <div style="padding:12px 0; border-bottom:1px solid #eee; color:#666;">
+        大学の1学期分 ／ Netflixシリーズ2本一気見 ／ 1日30分×3ヶ月<br>
+        <span style="color:#222; font-weight:500;">→ 観光・軽い交流レベル</span>
+      </div>
+
+      <div style="font-weight:700; color:#222; padding:12px 0; border-bottom:1px solid #eee;">200時間</div>
+      <div style="padding:12px 0; border-bottom:1px solid #eee; color:#666;">
+        通勤電車で1日40分×1年 ／ ゲーム1本クリア×3回分 ／ 週5時間×10ヶ月<br>
+        <span style="color:#222; font-weight:500;">→ 日常会話レベル</span>
+      </div>
+
+      <div style="font-weight:700; color:#222; padding:12px 0; border-bottom:1px solid #eee;">500時間</div>
+      <div style="padding:12px 0; border-bottom:1px solid #eee; color:#666;">
+        毎日1時間×1年半 ／ SNSに費やす平均年間時間とほぼ同じ<br>
+        <span style="color:#222; font-weight:500;">→ 限定的ビジネスレベル</span>
+      </div>
+
+      <div style="font-weight:700; color:#222; padding:12px 0;">1500時間</div>
+      <div style="padding:12px 0; color:#666;">
+        毎日1時間×4年 ／ 海外駐在1年分の実務経験に相当<br>
+        <span style="color:#222; font-weight:500;">→ 完全なビジネスレベル</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Steps breakdown -->
+  <div class="steps-table">
+    <h2>各段階の詳細</h2>
+    <div class="step-row">
+      <div class="step-hours">~10時間</div>
+      <div class="step-desc">
+        <h4>サバイバル</h4>
+        <p>「トイレはどこ？」「これください」。挨拶、基本的なフレーズ。旅行先で迷子にならないレベル。</p>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-hours">~50時間</div>
+      <div class="step-desc">
+        <h4>観光・軽い交流</h4>
+        <p>大学の1学期分。レストランで注文、自己紹介、完全な文を作れる。観光地で軽い会話ができる。</p>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-hours">~200時間</div>
+      <div class="step-desc">
+        <h4>日常会話</h4>
+        <p>雑談ができる、社交的な場面をこなせる。日常生活で困らない。人間関係を構築できるレベル。</p>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-hours">~500時間</div>
+      <div class="step-desc">
+        <h4>限定的ビジネス</h4>
+        <p>準備すれば会議に参加できる。翻訳ツールの補助ありで仕事のやり取り。専門用語を学び始める段階。</p>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-hours">~1500時間+</div>
+      <div class="step-desc">
+        <h4>完全なビジネス</h4>
+        <p>会議をリード、交渉、ユーモア、行間を読む。コミュニティの一員として受け入れられる。言語がアイデンティティの一部。</p>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer"><a href="https://youtube.com/@offreco" target="_blank">オフレコ戦略会議</a> · Tony & Ryo</p>
+</div>
+</body>
+</html>
