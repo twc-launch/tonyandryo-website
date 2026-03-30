@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tony & Ryo — Production Swimlane + Stage-Gates</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #232733;
+    --border: #2e3347;
+    --text: #e4e6ef;
+    --text-muted: #8b8fa3;
+    --accent-blue: #4e8cff;
+    --accent-purple: #9b6dff;
+    --accent-green: #34d399;
+    --accent-orange: #f59e0b;
+    --accent-red: #ef4444;
+    --accent-pink: #ec4899;
+    --accent-cyan: #22d3ee;
+    --gate-gold: #fbbf24;
+    --lead: #4e8cff;
+    --support: #9b6dff;
+    --editor-tag: #f59e0b;
+    --automation: #22d3ee;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+    overflow-x: auto;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 24px;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-size: 0.8rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .legend-gate {
+    width: 12px;
+    height: 20px;
+    border: 2px dashed var(--gate-gold);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* Main container */
+  .swimlane-container {
+    display: grid;
+    /* role-label + 7 phase cols + 6 gate cols = 14 */
+    grid-template-columns: 130px repeat(7, 1fr);
+    gap: 0;
+    min-width: 1100px;
+    position: relative;
+  }
+
+  /* Phase headers */
+  .phase-header {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 10px 8px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    position: relative;
+  }
+  .phase-header.corner {
+    background: var(--bg);
+    border-color: transparent;
+  }
+  .phase-num {
+    display: block;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-bottom: 2px;
+  }
+
+  /* Gate overlays between phases */
+  .gate-overlay {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 36px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 8px;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .gate-line {
+    width: 2px;
+    flex: 1;
+    background: repeating-linear-gradient(
+      to bottom,
+      var(--gate-gold) 0px,
+      var(--gate-gold) 6px,
+      transparent 6px,
+      transparent 12px
+    );
+    opacity: 0.6;
+  }
+  .gate-badge {
+    background: var(--gate-gold);
+    color: #000;
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 3px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: auto;
+    cursor: help;
+    position: relative;
+    z-index: 11;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .gate-badge:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 6px;
+    background: #1e1e2e;
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 400;
+    white-space: nowrap;
+    border: 1px solid var(--border);
+    z-index: 100;
+    text-transform: none;
+    letter-spacing: 0;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  /* Role labels */
+  .role-label {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 12px 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.82rem;
+    position: sticky;
+    left: 0;
+    z-index: 5;
+  }
+  .role-tag {
+    font-size: 0.62rem;
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-top: 4px;
+    width: fit-content;
+  }
+  .role-tag.lead { background: rgba(78,140,255,0.15); color: var(--lead); }
+  .role-tag.support { background: rgba(155,109,255,0.15); color: var(--support); }
+  .role-tag.flex { background: rgba(52,211,153,0.15); color: var(--accent-green); }
+  .role-tag.auto { background: rgba(34,211,238,0.15); color: var(--automation); }
+  .role-tag.outsource { background: rgba(245,158,11,0.15); color: var(--accent-orange); }
+
+  /* Task cells */
+  .task-cell {
+    border: 1px solid var(--border);
+    padding: 8px;
+    min-height: 70px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+  }
+  .task-cell.empty {
+    background: var(--bg);
+    opacity: 0.4;
+  }
+  .task-cell.active {
+    background: var(--surface2);
+  }
+
+  /* Task chips */
+  .task {
+    font-size: 0.7rem;
+    padding: 5px 8px;
+    border-radius: 5px;
+    font-weight: 500;
+    line-height: 1.3;
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  .task .icon { flex-shrink: 0; font-size: 0.72rem; }
+
+  .task.lead-task {
+    background: rgba(78,140,255,0.1);
+    border-left: 3px solid var(--lead);
+    color: #c5d8ff;
+  }
+  .task.support-task {
+    background: rgba(155,109,255,0.1);
+    border-left: 3px solid var(--support);
+    color: #d4c5ff;
+  }
+  .task.shared-task {
+    background: rgba(52,211,153,0.08);
+    border-left: 3px solid var(--accent-green);
+    color: #b0f0d8;
+  }
+  .task.auto-task {
+    background: rgba(34,211,238,0.1);
+    border-left: 3px solid var(--automation);
+    color: #b5f0f7;
+  }
+  .task.outsource-task {
+    background: rgba(245,158,11,0.08);
+    border-left: 3px solid var(--accent-orange);
+    color: #fde68a;
+  }
+
+  /* Handoff arrows */
+  .handoff {
+    font-size: 0.58rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 2px 0;
+    font-style: italic;
+  }
+
+  /* Responsive scroll hint */
+  .scroll-hint {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  /* Gate position markers in the grid */
+  .gate-col-marker {
+    display: none;
+  }
+
+  /* Section: Stage Gate summary below */
+  .gates-summary {
+    margin-top: 32px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .gate-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gate-gold);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .gate-card h3 {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--gate-gold);
+    margin-bottom: 6px;
+  }
+  .gate-card p {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .gate-card .decision {
+    margin-top: 8px;
+    display: flex;
+    gap: 6px;
+  }
+  .gate-card .decision span {
+    font-size: 0.62rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .decision .go { background: rgba(52,211,153,0.15); color: var(--accent-green); }
+  .decision .revise { background: rgba(245,158,11,0.15); color: var(--accent-orange); }
+  .decision .kill { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+
+  /* Notes section */
+  .notes {
+    margin-top: 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .notes h2 {
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+  .notes ul {
+    list-style: none;
+    padding: 0;
+  }
+  .notes li {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    line-height: 1.5;
+  }
+  .notes li:last-child { border-bottom: none; }
+  .notes li strong { color: var(--text); }
+
+  /* Automation callout */
+  .auto-callout {
+    margin-top: 24px;
+    background: rgba(34,211,238,0.05);
+    border: 1px solid rgba(34,211,238,0.2);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .auto-callout h2 {
+    font-size: 1rem;
+    color: var(--automation);
+    margin-bottom: 12px;
+  }
+  .auto-callout .auto-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 10px;
+  }
+  .auto-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.75rem;
+    padding: 8px;
+    background: rgba(34,211,238,0.05);
+    border-radius: 6px;
+  }
+  .auto-item .a-icon { font-size: 0.9rem; flex-shrink: 0; }
+  .auto-item .a-label { font-weight: 600; color: var(--text); }
+  .auto-item .a-desc { color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<h1>🎬 Tony & Ryo — Video Production Swimlane</h1>
+<p class="subtitle">Lead/Support model with Stage-Gate quality checks · Tasks color-coded by role type · Hover gates for decision criteria</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--lead)"></div> Lead (drives the video)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--support)"></div> Support (assists lead)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--accent-green)"></div> Shared / Both</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--automation)"></div> Ali / OpenClaw (automatable)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--accent-orange)"></div> Outsourceable module</div>
+  <div class="legend-item"><div class="legend-gate"></div> Stage-Gate (go/no-go)</div>
+</div>
+
+<p class="scroll-hint">← Scroll horizontally if needed →</p>
+
+<!-- ============ SWIMLANE GRID ============ -->
+<div style="position:relative; overflow-x:auto;">
+
+<div class="swimlane-container" id="swimlane">
+
+  <!-- HEADER ROW -->
+  <div class="phase-header corner"></div>
+  <div class="phase-header" style="background:linear-gradient(135deg, #1e2a4a, var(--surface))">
+    <span class="phase-num">Phase 1</span>💡 Ideation
+  </div>
+  <div class="phase-header" style="background:linear-gradient(135deg, #1e2a4a, var(--surface))">
+    <span class="phase-num">Phase 2</span>📋 Pre-Production
+  </div>
+  <div class="phase-header" style="background:linear-gradient(135deg, #2a1e4a, var(--surface))">
+    <span class="phase-num">Phase 3</span>🎥 Production
+  </div>
+  <div class="phase-header" style="background:linear-gradient(135deg, #2a1e4a, var(--surface))">
+    <span class="phase-num">Phase 4</span>✂️ Post-Production
+  </div>
+  <div class="phase-header" style="background:linear-gradient(135deg, #1e3a2a, var(--surface))">
+    <span class="phase-num">Phase 5</span>🖼️ Packaging
+  </div>
+  <div class="phase-header" style="background:linear-gradient(135deg, #1e3a2a, var(--surface))">
+    <span class="phase-num">Phase 6</span>🚀 Publish
+  </div>
+  <div class="phase-header" style="background:linear-gradient(135deg, #3a2a1e, var(--surface))">
+    <span class="phase-num">Phase 7</span>📈 Distribution & Growth
+  </div>
+
+  <!-- ====== ROW: LEAD ====== -->
+  <div class="role-label">
+    🎯 Lead
+    <span class="role-tag lead">Tony or Ryo</span>
+    <span class="role-tag" style="background:rgba(255,255,255,0.05);color:var(--text-muted);font-size:0.58rem;margin-top:2px">Drives the video</span>
+  </div>
+
+  <!-- Ideation -->
+  <div class="task-cell active">
+    <div class="task lead-task"><span class="icon">🧠</span> Topic ideation & angle</div>
+    <div class="task lead-task"><span class="icon">🔍</span> Keyword / trend research</div>
+    <div class="task lead-task"><span class="icon">📊</span> Competitive scan</div>
+  </div>
+
+  <!-- Pre-Prod -->
+  <div class="task-cell active">
+    <div class="task lead-task"><span class="icon">📝</span> Script / outline draft</div>
+    <div class="task lead-task"><span class="icon">🎯</span> Hook & structure</div>
+    <div class="task lead-task"><span class="icon">📍</span> Shot list / location plan</div>
+  </div>
+
+  <!-- Production -->
+  <div class="task-cell active">
+    <div class="task lead-task"><span class="icon">🎬</span> Main camera / talking head</div>
+    <div class="task lead-task"><span class="icon">🗣️</span> A-roll direction</div>
+    <div class="task lead-task"><span class="icon">🔊</span> Audio check & retakes</div>
+  </div>
+
+  <!-- Post-Prod -->
+  <div class="task-cell active">
+    <div class="task lead-task"><span class="icon">✂️</span> Main CapCut edit</div>
+    <div class="task lead-task"><span class="icon">🎵</span> Music selection</div>
+    <div class="task lead-task"><span class="icon">🎨</span> Color / pacing / transitions</div>
+  </div>
+
+  <!-- Packaging -->
+  <div class="task-cell active">
+    <div class="task lead-task"><span class="icon">📸</span> Thumbnail concept & direction</div>
+    <div class="task lead-task"><span class="icon">✍️</span> Title (JP) — final call</div>
+    <div class="task lead-task"><span class="icon">📄</span> Description (JP)</div>
+  </div>
+
+  <!-- Publish -->
+  <div class="task-cell active">
+    <div class="task lead-task"><span class="icon">✅</span> Final review & sign-off</div>
+    <div class="task lead-task"><span class="icon">📅</span> Schedule date decision</div>
+  </div>
+
+  <!-- Distribution -->
+  <div class="task-cell active">
+    <div class="task lead-task"><span class="icon">📣</span> Launch day engagement</div>
+    <div class="task lead-task"><span class="icon">💬</span> Comment replies (first 24h)</div>
+  </div>
+
+  <!-- ====== ROW: SUPPORT ====== -->
+  <div class="role-label">
+    🤝 Support
+    <span class="role-tag support">Tony or Ryo</span>
+    <span class="role-tag" style="background:rgba(255,255,255,0.05);color:var(--text-muted);font-size:0.58rem;margin-top:2px">Assists the lead</span>
+  </div>
+
+  <!-- Ideation -->
+  <div class="task-cell active">
+    <div class="task support-task"><span class="icon">💬</span> Brainstorm & feedback</div>
+    <div class="task support-task"><span class="icon">🎯</span> Audience angle input</div>
+  </div>
+
+  <!-- Pre-Prod -->
+  <div class="task-cell active">
+    <div class="task support-task"><span class="icon">📖</span> Research & data gathering</div>
+    <div class="task support-task"><span class="icon">✏️</span> Outline review & notes</div>
+  </div>
+
+  <!-- Production -->
+  <div class="task-cell active">
+    <div class="task support-task"><span class="icon">📹</span> B-roll filming</div>
+    <div class="task support-task"><span class="icon">🖥️</span> Screen recordings / inserts</div>
+    <div class="task support-task"><span class="icon">📱</span> Behind-the-scenes clips</div>
+  </div>
+
+  <!-- Post-Prod -->
+  <div class="task-cell active">
+    <div class="task support-task"><span class="icon">💬</span> Subtitle creation</div>
+    <div class="task support-task"><span class="icon">🎞️</span> B-roll cut & insert</div>
+    <div class="task support-task"><span class="icon">👁️</span> QA pass (watch full cut)</div>
+  </div>
+
+  <!-- Packaging -->
+  <div class="task-cell active">
+    <div class="task support-task"><span class="icon">🖼️</span> Thumbnail shooting/design assist</div>
+    <div class="task support-task"><span class="icon">🏷️</span> Tags & cards setup</div>
+  </div>
+
+  <!-- Publish -->
+  <div class="task-cell active">
+    <div class="task support-task"><span class="icon">⬆️</span> Upload & metadata entry</div>
+    <div class="task support-task"><span class="icon">🔗</span> End screens & cards</div>
+  </div>
+
+  <!-- Distribution -->
+  <div class="task-cell active">
+    <div class="task support-task"><span class="icon">📝</span> Community post draft</div>
+    <div class="task support-task"><span class="icon">💬</span> Comment replies (ongoing)</div>
+  </div>
+
+  <!-- ====== ROW: ALI / OPENCLAW ====== -->
+  <div class="role-label">
+    🤖 Ali (OpenClaw)
+    <span class="role-tag auto">Automation</span>
+    <span class="role-tag" style="background:rgba(255,255,255,0.05);color:var(--text-muted);font-size:0.58rem;margin-top:2px">Can do today or soon</span>
+  </div>
+
+  <!-- Ideation -->
+  <div class="task-cell active">
+    <div class="task auto-task"><span class="icon">📊</span> Analytics pull (what's working?)</div>
+    <div class="task auto-task"><span class="icon">🔎</span> Trend / keyword research</div>
+    <div class="task auto-task"><span class="icon">📋</span> Idea board maintenance</div>
+  </div>
+
+  <!-- Pre-Prod -->
+  <div class="task-cell active">
+    <div class="task auto-task"><span class="icon">📑</span> Research compilation</div>
+    <div class="task auto-task"><span class="icon">📊</span> Data / stats for script</div>
+  </div>
+
+  <!-- Production -->
+  <div class="task-cell empty">
+    <div class="handoff">— Physical shoot —</div>
+  </div>
+
+  <!-- Post-Prod -->
+  <div class="task-cell active">
+    <div class="task auto-task"><span class="icon">🌐</span> EN/KR/CN translations</div>
+    <div class="task auto-task"><span class="icon">📝</span> Transcript generation</div>
+  </div>
+
+  <!-- Packaging -->
+  <div class="task-cell active">
+    <div class="task auto-task"><span class="icon">🌐</span> Multi-lang titles & descs</div>
+    <div class="task auto-task"><span class="icon">🖼️</span> Thumbnail benchmarking</div>
+    <div class="task auto-task"><span class="icon">🔍</span> SEO optimization check</div>
+  </div>
+
+  <!-- Publish -->
+  <div class="task-cell active">
+    <div class="task auto-task"><span class="icon">📅</span> Scheduling reminders</div>
+    <div class="task auto-task"><span class="icon">✉️</span> Newsletter draft</div>
+  </div>
+
+  <!-- Distribution -->
+  <div class="task-cell active">
+    <div class="task auto-task"><span class="icon">📊</span> Performance tracking (7d/28d)</div>
+    <div class="task auto-task"><span class="icon">📝</span> Community post drafts</div>
+    <div class="task auto-task"><span class="icon">📧</span> Newsletter send</div>
+  </div>
+
+  <!-- ====== ROW: OUTSOURCEABLE ====== -->
+  <div class="role-label">
+    📦 Outsourceable
+    <span class="role-tag outsource">Future hire / contractor</span>
+    <span class="role-tag" style="background:rgba(255,255,255,0.05);color:var(--text-muted);font-size:0.58rem;margin-top:2px">Modular & detachable</span>
+  </div>
+
+  <!-- Ideation -->
+  <div class="task-cell empty"></div>
+
+  <!-- Pre-Prod -->
+  <div class="task-cell empty"></div>
+
+  <!-- Production -->
+  <div class="task-cell empty"></div>
+
+  <!-- Post-Prod -->
+  <div class="task-cell active">
+    <div class="task outsource-task"><span class="icon">✂️</span> Full video editing</div>
+    <div class="task outsource-task"><span class="icon">💬</span> Subtitle styling / SRT</div>
+    <div class="task outsource-task"><span class="icon">🎨</span> Motion graphics / VFX</div>
+  </div>
+
+  <!-- Packaging -->
+  <div class="task-cell active">
+    <div class="task outsource-task"><span class="icon">🖼️</span> Thumbnail design (Photoshop)</div>
+  </div>
+
+  <!-- Publish -->
+  <div class="task-cell empty"></div>
+
+  <!-- Distribution -->
+  <div class="task-cell active">
+    <div class="task outsource-task"><span class="icon">🎬</span> Shorts / clips cutting</div>
+    <div class="task outsource-task"><span class="icon">📱</span> Social media repurposing</div>
+  </div>
+
+</div>
+
+<!-- ============ STAGE-GATE OVERLAYS ============ -->
+<div id="gates-overlay" style="position:absolute; top:0; left:0; right:0; bottom:0; pointer-events:none;">
+  <!-- Gates are positioned via JS -->
+</div>
+
+</div><!-- end scroll wrapper -->
+
+<!-- ============ STAGE-GATE CARDS ============ -->
+<h2 style="margin-top:36px; font-size:1.1rem;">🚧 Stage-Gate Decision Points</h2>
+<p style="color:var(--text-muted); font-size:0.8rem; margin-bottom:16px;">Each gate is a deliberate go/no-go checkpoint. Lead makes the call; support gives input.</p>
+
+<div class="gates-summary">
+  <div class="gate-card">
+    <h3>Gate 1 — Idea Worth Pursuing?</h3>
+    <p>After Ideation → Before Pre-Prod<br><br>
+    <strong>Criteria:</strong> Does this serve our audience? Is the angle unique? Can we add real value? Does it fit the content calendar?</p>
+    <div class="decision">
+      <span class="go">✓ GO → Plan it</span>
+      <span class="revise">↻ Backlog</span>
+      <span class="kill">✕ Kill</span>
+    </div>
+  </div>
+
+  <div class="gate-card">
+    <h3>Gate 2 — Script & Plan Solid?</h3>
+    <p>After Pre-Prod → Before Shoot<br><br>
+    <strong>Criteria:</strong> Is the hook strong? Is the structure clear? Do we have all research/data? Is the shot list ready?</p>
+    <div class="decision">
+      <span class="go">✓ GO → Shoot</span>
+      <span class="revise">↻ Rework outline</span>
+      <span class="kill">✕ Shelve</span>
+    </div>
+  </div>
+
+  <div class="gate-card">
+    <h3>Gate 3 — Footage Usable?</h3>
+    <p>After Production → Before Edit<br><br>
+    <strong>Criteria:</strong> Audio clean? All talking points covered? B-roll sufficient? Any reshoot needed?</p>
+    <div class="decision">
+      <span class="go">✓ GO → Edit</span>
+      <span class="revise">↻ Reshoot parts</span>
+      <span class="kill">✕ Rare</span>
+    </div>
+  </div>
+
+  <div class="gate-card">
+    <h3>Gate 4 — Edit Approved?</h3>
+    <p>After Post-Prod → Before Packaging<br><br>
+    <strong>Criteria:</strong> Pacing good? Story arc holds? Subtitles accurate? Watch-through complete?</p>
+    <div class="decision">
+      <span class="go">✓ GO → Package</span>
+      <span class="revise">↻ Revision notes</span>
+      <span class="kill">✕ Very rare</span>
+    </div>
+  </div>
+
+  <div class="gate-card">
+    <h3>Gate 5 — Thumbnail & Title Ready?</h3>
+    <p>After Packaging → Before Publish<br><br>
+    <strong>Criteria:</strong> Passes 18% mobile test? Curiosity gap present? Title/thumb combo compelling? Multi-lang metadata done?</p>
+    <div class="decision">
+      <span class="go">✓ GO → Publish</span>
+      <span class="revise">↻ Rework thumb/title</span>
+    </div>
+  </div>
+
+  <div class="gate-card">
+    <h3>Gate 6 — Post-Launch Review</h3>
+    <p>7 days after Publish<br><br>
+    <strong>Criteria:</strong> CTR vs benchmark? AVD holding? Shorts performance? Community engagement? Anything to fix?</p>
+    <div class="decision">
+      <span class="go">✓ Archive & learn</span>
+      <span class="revise">↻ Update thumb/title</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ KEY NOTES ============ -->
+<div class="notes">
+  <h2>📌 How the Lead/Support Model Works</h2>
+  <ul>
+    <li><strong>Each video has one Lead and one Support.</strong> The Lead drives the creative vision, writes/outlines, does the main CapCut edit, and makes final calls at each gate.</li>
+    <li><strong>Lead and Support are decided per project</strong> — not fixed roles. Tony leads some videos; Ryo leads others. This is intentional and allows both to own content.</li>
+    <li><strong>The Support handles supplementary work:</strong> B-roll filming, subtitle creation, research assistance, upload logistics, community engagement.</li>
+    <li><strong>Gate decisions default to the Lead,</strong> but both discuss. If they disagree, the Lead's call stands for their video.</li>
+    <li><strong>Interns (Harry, Ria) currently handle some Distribution tasks.</strong> When they depart, those tasks migrate to the Support role or Ali (OpenClaw) for automatable items.</li>
+    <li><strong>The 🤖 Ali row shows what's automatable today or near-term.</strong> Translations, analytics, newsletter drafts, SEO checks, and idea board maintenance are all within current capability.</li>
+    <li><strong>The 📦 Outsourceable row shows detachable modules</strong> — self-contained tasks you could hand to a contractor without them needing deep context. These are your "plug and play" zones for scaling.</li>
+  </ul>
+</div>
+
+<!-- ============ AUTOMATION OPPORTUNITIES ============ -->
+<div class="auto-callout">
+  <h2>🤖 What Ali (OpenClaw) Can Handle Today</h2>
+  <div class="auto-grid">
+    <div class="auto-item">
+      <span class="a-icon">📊</span>
+      <div>
+        <div class="a-label">Analytics & Performance Tracking</div>
+        <div class="a-desc">Daily pulls, 7d/28d reports, CTR/AVD benchmarks, trend alerts</div>
+      </div>
+    </div>
+    <div class="auto-item">
+      <span class="a-icon">🌐</span>
+      <div>
+        <div class="a-label">Multi-Language Metadata</div>
+        <div class="a-desc">EN/KR/CN titles, descriptions, and tags — logged to translation sheet</div>
+      </div>
+    </div>
+    <div class="auto-item">
+      <span class="a-icon">📋</span>
+      <div>
+        <div class="a-label">Idea Board & Research</div>
+        <div class="a-desc">Link summarization, idea cataloging, competitor analysis</div>
+      </div>
+    </div>
+    <div class="auto-item">
+      <span class="a-icon">🖼️</span>
+      <div>
+        <div class="a-label">Thumbnail Benchmarking</div>
+        <div class="a-desc">Save & analyze competitor thumbnails, apply Youshaei framework</div>
+      </div>
+    </div>
+    <div class="auto-item">
+      <span class="a-icon">📧</span>
+      <div>
+        <div class="a-label">Newsletter & Community Drafts</div>
+        <div class="a-desc">Draft community posts, MailerLite newsletters from video content</div>
+      </div>
+    </div>
+    <div class="auto-item">
+      <span class="a-icon">💰</span>
+      <div>
+        <div class="a-label">Expense & Revenue Tracking</div>
+        <div class="a-desc">Receipt processing, expense logging, AdSense revenue tracking</div>
+      </div>
+    </div>
+    <div class="auto-item">
+      <span class="a-icon">📝</span>
+      <div>
+        <div class="a-label">Transcript Generation</div>
+        <div class="a-desc">Whisper transcription, formatted output for repurposing</div>
+      </div>
+    </div>
+    <div class="auto-item">
+      <span class="a-icon">⏰</span>
+      <div>
+        <div class="a-label">Scheduling & Reminders</div>
+        <div class="a-desc">Calendar events, deadline nudges, gate review prompts</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Position gate overlays between phase columns
+function positionGates() {
+  const grid = document.getElementById('swimlane');
+  const overlay = document.getElementById('gates-overlay');
+  overlay.innerHTML = '';
+
+  const gates = [
+    { after: 1, label: 'G1', tooltip: 'Gate 1: Idea worth pursuing? → Go / Backlog / Kill' },
+    { after: 2, label: 'G2', tooltip: 'Gate 2: Script & plan solid? → Go / Rework / Shelve' },
+    { after: 3, label: 'G3', tooltip: 'Gate 3: Footage usable? → Go / Reshoot' },
+    { after: 4, label: 'G4', tooltip: 'Gate 4: Edit approved? → Go / Revision notes' },
+    { after: 5, label: 'G5', tooltip: 'Gate 5: Thumbnail & title ready? → Go / Rework' },
+    { after: 6, label: 'G6', tooltip: 'Gate 6: Post-launch review (7d) → Archive / Update' },
+  ];
+
+  const gridRect = grid.getBoundingClientRect();
+  const headerCells = grid.querySelectorAll('.phase-header');
+
+  gates.forEach(g => {
+    const cell = headerCells[g.after]; // 0 = corner, 1-7 = phases
+    if (!cell) return;
+    const cellRect = cell.getBoundingClientRect();
+    const rightEdge = cellRect.right - gridRect.left;
+
+    const gateEl = document.createElement('div');
+    gateEl.className = 'gate-overlay';
+    gateEl.style.left = (rightEdge - 18) + 'px';
+
+    gateEl.innerHTML = `
+      <div class="gate-badge" data-tooltip="${g.tooltip}">${g.label}</div>
+      <div class="gate-line"></div>
+    `;
+    overlay.appendChild(gateEl);
+  });
+}
+
+window.addEventListener('load', positionGates);
+window.addEventListener('resize', positionGates);
+</script>
+
+</body>
+</html>

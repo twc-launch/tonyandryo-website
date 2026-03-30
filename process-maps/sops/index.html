@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tony & Ryo — SOP Dashboard</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #232733;
+    --border: #2e3347;
+    --text: #e4e6ef;
+    --text-muted: #8b8fa3;
+    --blue: #4e8cff;
+    --purple: #9b6dff;
+    --green: #34d399;
+    --orange: #f59e0b;
+    --red: #ef4444;
+    --cyan: #22d3ee;
+    --gold: #fbbf24;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  .header {
+    padding: 32px 40px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header h1 { font-size: 1.6rem; margin-bottom: 4px; }
+  .header p { color: var(--text-muted); font-size: 0.85rem; }
+
+  .layout {
+    display: flex;
+    min-height: calc(100vh - 100px);
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 260px;
+    border-right: 1px solid var(--border);
+    padding: 20px 0;
+    flex-shrink: 0;
+  }
+  .sidebar-section {
+    padding: 0 16px;
+    margin-bottom: 24px;
+  }
+  .sidebar-section h3 {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    padding: 0 8px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 500;
+    transition: all 0.15s;
+    color: var(--text-muted);
+  }
+  .nav-item:hover {
+    background: var(--surface2);
+    color: var(--text);
+  }
+  .nav-item.active {
+    background: rgba(78,140,255,0.1);
+    color: var(--blue);
+  }
+  .nav-icon {
+    font-size: 1rem;
+    width: 24px;
+    text-align: center;
+  }
+  .nav-phase {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    margin-left: auto;
+    opacity: 0.6;
+  }
+
+  /* Main content */
+  .main {
+    flex: 1;
+    padding: 32px 40px;
+    overflow-y: auto;
+  }
+
+  .sop-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+  .sop-header h2 { font-size: 1.3rem; }
+  .sop-meta {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .meta-tag {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-weight: 500;
+  }
+  .meta-tag.lead { background: rgba(78,140,255,0.12); color: var(--blue); }
+  .meta-tag.support { background: rgba(155,109,255,0.12); color: var(--purple); }
+  .meta-tag.ali { background: rgba(34,211,238,0.12); color: var(--cyan); }
+  .meta-tag.time { background: rgba(255,255,255,0.06); color: var(--text-muted); }
+
+  /* Checklist sections */
+  .step-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .step-header {
+    padding: 14px 18px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .step-header:hover { background: var(--surface2); }
+  .step-arrow {
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+    color: var(--text-muted);
+  }
+  .step-header.open .step-arrow { transform: rotate(90deg); }
+  .step-body {
+    padding: 0 18px 16px;
+    display: none;
+  }
+  .step-header.open + .step-body { display: block; }
+
+  /* Checklist items */
+  .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+  .check-item:last-child { border-bottom: none; }
+  .check-item input[type="checkbox"] {
+    margin-top: 3px;
+    accent-color: var(--green);
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  .check-item label {
+    cursor: pointer;
+    flex: 1;
+  }
+  .check-item label.checked {
+    text-decoration: line-through;
+    color: var(--text-muted);
+  }
+  .owner-badge {
+    font-size: 0.6rem;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .owner-badge.lead { background: rgba(78,140,255,0.15); color: var(--blue); }
+  .owner-badge.support { background: rgba(155,109,255,0.15); color: var(--purple); }
+  .owner-badge.ali { background: rgba(34,211,238,0.15); color: var(--cyan); }
+  .owner-badge.both { background: rgba(52,211,153,0.15); color: var(--green); }
+
+  /* Gate cards */
+  .gate-card {
+    background: rgba(251,191,36,0.05);
+    border: 1px solid rgba(251,191,36,0.2);
+    border-left: 4px solid var(--gold);
+    border-radius: 8px;
+    padding: 18px;
+    margin-top: 24px;
+  }
+  .gate-card h3 {
+    color: var(--gold);
+    font-size: 0.88rem;
+    margin-bottom: 10px;
+  }
+  .gate-card p {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 8px;
+  }
+  .gate-decisions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .gate-decisions span {
+    font-size: 0.68rem;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-weight: 600;
+  }
+  .g-go { background: rgba(52,211,153,0.12); color: var(--green); }
+  .g-revise { background: rgba(245,158,11,0.12); color: var(--orange); }
+  .g-kill { background: rgba(239,68,68,0.12); color: var(--red); }
+
+  /* Progress bar */
+  .progress-bar {
+    margin-bottom: 24px;
+  }
+  .progress-track {
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blue), var(--green));
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+  .progress-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* Overview page */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+  }
+  .overview-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .overview-card:hover {
+    border-color: var(--blue);
+    transform: translateY(-2px);
+  }
+  .overview-card h3 {
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .overview-card p {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .overview-card .card-meta {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .tip {
+    background: rgba(78,140,255,0.06);
+    border: 1px solid rgba(78,140,255,0.15);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 12px 0;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .tip strong { color: var(--blue); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📋 SOP Dashboard — Tony & Ryo</h1>
+  <p>Standard Operating Procedures for every phase of video production. Click a phase to see its checklist.</p>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <h3>Overview</h3>
+      <div class="nav-item active" onclick="showPage('overview')">
+        <span class="nav-icon">🏠</span> All Phases
+      </div>
+      <div class="nav-item" onclick="showPage('master')">
+        <span class="nav-icon">📋</span> Master Checklist
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <h3>Phase SOPs</h3>
+      <div class="nav-item" onclick="showPage('ideation')">
+        <span class="nav-icon">💡</span> Ideation <span class="nav-phase">P1</span>
+      </div>
+      <div class="nav-item" onclick="showPage('preprod')">
+        <span class="nav-icon">📋</span> Pre-Production <span class="nav-phase">P2</span>
+      </div>
+      <div class="nav-item" onclick="showPage('production')">
+        <span class="nav-icon">🎥</span> Production <span class="nav-phase">P3</span>
+      </div>
+      <div class="nav-item" onclick="showPage('postprod')">
+        <span class="nav-icon">✂️</span> Post-Production <span class="nav-phase">P4</span>
+      </div>
+      <div class="nav-item" onclick="showPage('packaging')">
+        <span class="nav-icon">🖼️</span> Packaging <span class="nav-phase">P5</span>
+      </div>
+      <div class="nav-item" onclick="showPage('publish')">
+        <span class="nav-icon">🚀</span> Publish <span class="nav-phase">P6</span>
+      </div>
+      <div class="nav-item" onclick="showPage('distribution')">
+        <span class="nav-icon">📈</span> Distribution <span class="nav-phase">P7</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="main" id="main-content">
+    <!-- Content injected by JS -->
+  </div>
+</div>
+
+<script>
+const pages = {
+
+overview: `
+<h2>🎬 Video Production SOPs</h2>
+<p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:8px;">7 phases, 6 stage-gates, Lead/Support model. Each phase is a modular, outsourceable unit.</p>
+
+<div class="tip">
+  <strong>How to use:</strong> For each new video, duplicate the Master Checklist. Work through phases in order. 
+  Each gate must be passed (Go/Revise/Kill) before entering the next phase. Lead makes the call; Support gives input.
+</div>
+
+<div class="overview-grid">
+  <div class="overview-card" onclick="showPage('ideation')">
+    <h3>💡 Phase 1: Ideation</h3>
+    <p>Topic selection, angle definition, keyword research, competitive scan. Where every video begins.</p>
+    <div class="card-meta">
+      <span class="meta-tag lead">Lead drives</span>
+      <span class="meta-tag ali">Ali assists</span>
+      <span class="meta-tag time">⏱ 30-60 min</span>
+    </div>
+  </div>
+  <div class="overview-card" onclick="showPage('preprod')">
+    <h3>📋 Phase 2: Pre-Production</h3>
+    <p>Script/outline, hook design, shot list, research compilation, logistics & gear check.</p>
+    <div class="card-meta">
+      <span class="meta-tag lead">Lead drives</span>
+      <span class="meta-tag support">Support reviews</span>
+      <span class="meta-tag time">⏱ 2-4 hrs</span>
+    </div>
+  </div>
+  <div class="overview-card" onclick="showPage('production')">
+    <h3>🎥 Phase 3: Production</h3>
+    <p>Shoot day — A-roll, B-roll, audio monitoring, backup, debrief.</p>
+    <div class="card-meta">
+      <span class="meta-tag lead">Lead: A-roll</span>
+      <span class="meta-tag support">Support: B-roll</span>
+      <span class="meta-tag time">⏱ 2-6 hrs</span>
+    </div>
+  </div>
+  <div class="overview-card" onclick="showPage('postprod')">
+    <h3>✂️ Phase 4: Post-Production</h3>
+    <p>CapCut edit, subtitles, music, pacing, QA watch-through, translations.</p>
+    <div class="card-meta">
+      <span class="meta-tag lead">Lead: Main edit</span>
+      <span class="meta-tag support">Support: Subs + QA</span>
+      <span class="meta-tag time">⏱ 4-10 hrs</span>
+    </div>
+  </div>
+  <div class="overview-card" onclick="showPage('packaging')">
+    <h3>🖼️ Phase 5: Packaging</h3>
+    <p>Thumbnail, title, description, tags, end screens, multi-language metadata.</p>
+    <div class="card-meta">
+      <span class="meta-tag lead">Lead: Creative</span>
+      <span class="meta-tag ali">Ali: Multi-lang</span>
+      <span class="meta-tag time">⏱ 1-3 hrs</span>
+    </div>
+  </div>
+  <div class="overview-card" onclick="showPage('publish')">
+    <h3>🚀 Phase 6: Publish</h3>
+    <p>Upload, schedule, community post, newsletter, launch-day engagement.</p>
+    <div class="card-meta">
+      <span class="meta-tag support">Support: Upload</span>
+      <span class="meta-tag ali">Ali: Newsletter</span>
+      <span class="meta-tag time">⏱ 30-60 min</span>
+    </div>
+  </div>
+  <div class="overview-card" onclick="showPage('distribution')">
+    <h3>📈 Phase 7: Distribution & Growth</h3>
+    <p>Shorts, community engagement, performance review, retrospective.</p>
+    <div class="card-meta">
+      <span class="meta-tag support">Support: Clips</span>
+      <span class="meta-tag ali">Ali: Analytics</span>
+      <span class="meta-tag time">⏱ Ongoing</span>
+    </div>
+  </div>
+</div>
+`,
+
+master: `
+<h2>📋 Master Checklist</h2>
+<p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">The executive-level tracker. Duplicate for each video project.</p>
+
+<div class="tip">
+  <strong>Project header:</strong> Fill in Video Title, Episode #, Lead (Tony/Ryo), Support (Tony/Ryo), Target Publish Date before starting.
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)">
+    <span class="step-arrow">▶</span> 💡 Phase 1: Ideation
+  </div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox" id="m1" onchange="updateCheck(this)"><label for="m1">Topic selected & angle defined</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox" id="m2" onchange="updateCheck(this)"><label for="m2">Keyword/trend research done</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox" id="m3" onchange="updateCheck(this)"><label for="m3">Competitive scan complete</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox" id="m4" onchange="updateCheck(this)"><label for="m4">Added to Idea Board</label><span class="owner-badge ali">Ali</span></div>
+    <div class="gate-card">
+      <h3>🚧 Gate 1: Worth pursuing?</h3>
+      <p>Can we say something the top 3 results don't? Does it match our audience?</p>
+      <div class="gate-decisions"><span class="g-go">✓ Go → Plan it</span><span class="g-revise">↻ Backlog</span><span class="g-kill">✕ Kill</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header" onclick="toggleStep(this)">
+    <span class="step-arrow">▶</span> 📋 Phase 2: Pre-Production
+  </div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox" id="m5" onchange="updateCheck(this)"><label for="m5">Script/outline drafted</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox" id="m6" onchange="updateCheck(this)"><label for="m6">Hook written (first 30s plan)</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox" id="m7" onchange="updateCheck(this)"><label for="m7">Research/data compiled</label><span class="owner-badge both">Both + Ali</span></div>
+    <div class="check-item"><input type="checkbox" id="m8" onchange="updateCheck(this)"><label for="m8">Shot list created</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox" id="m9" onchange="updateCheck(this)"><label for="m9">Location/setup confirmed</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox" id="m10" onchange="updateCheck(this)"><label for="m10">Gear check done</label><span class="owner-badge support">Support</span></div>
+    <div class="gate-card">
+      <h3>🚧 Gate 2: Plan solid?</h3>
+      <p>Hook articulable in one sentence? ≤5 key points? Support can follow the outline?</p>
+      <div class="gate-decisions"><span class="g-go">✓ Go → Shoot</span><span class="g-revise">↻ Rework</span><span class="g-kill">✕ Shelve</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header" onclick="toggleStep(this)">
+    <span class="step-arrow">▶</span> 🎥 Phase 3: Production
+  </div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox" id="m11" onchange="updateCheck(this)"><label for="m11">A-roll filmed</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox" id="m12" onchange="updateCheck(this)"><label for="m12">B-roll filmed</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox" id="m13" onchange="updateCheck(this)"><label for="m13">Audio quality verified</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox" id="m14" onchange="updateCheck(this)"><label for="m14">Footage backed up</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox" id="m15" onchange="updateCheck(this)"><label for="m15">BTS clips captured</label><span class="owner-badge support">Support</span></div>
+    <div class="gate-card">
+      <h3>🚧 Gate 3: Footage usable?</h3>
+      <p>Audio clean? All talking points covered? B-roll sufficient?</p>
+      <div class="gate-decisions"><span class="g-go">✓ Go → Edit</span><span class="g-revise">↻ Reshoot</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header" onclick="toggleStep(this)">
+    <span class="step-arrow">▶</span> ✂️ Phase 4: Post-Production
+  </div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox" id="m16" onchange="updateCheck(this)"><label for="m16">Rough cut assembled (CapCut)</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox" id="m17" onchange="updateCheck(this)"><label for="m17">Subtitles created</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox" id="m18" onchange="updateCheck(this)"><label for="m18">B-roll inserted</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox" id="m19" onchange="updateCheck(this)"><label for="m19">Music selected & placed</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox" id="m20" onchange="updateCheck(this)"><label for="m20">Color/pacing pass done</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox" id="m21" onchange="updateCheck(this)"><label for="m21">QA watch-through complete</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox" id="m22" onchange="updateCheck(this)"><label for="m22">Transcript generated</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox" id="m23" onchange="updateCheck(this)"><label for="m23">Multi-lang translations</label><span class="owner-badge ali">Ali</span></div>
+    <div class="gate-card">
+      <h3>🚧 Gate 4: Edit approved?</h3>
+      <p>Both watched it. No QA issues. Pacing holds. Audio clean.</p>
+      <div class="gate-decisions"><span class="g-go">✓ Go → Package</span><span class="g-revise">↻ Revise (max 2 rounds)</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header" onclick="toggleStep(this)">
+    <span class="step-arrow">▶</span> 🖼️ Phase 5: Packaging
+  </div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox" id="m24" onchange="updateCheck(this)"><label for="m24">Thumbnail concept decided</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox" id="m25" onchange="updateCheck(this)"><label for="m25">Thumbnail designed & passes 18% test</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox" id="m26" onchange="updateCheck(this)"><label for="m26">JP title finalized</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox" id="m27" onchange="updateCheck(this)"><label for="m27">JP description written</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox" id="m28" onchange="updateCheck(this)"><label for="m28">EN/KR/CN metadata generated</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox" id="m29" onchange="updateCheck(this)"><label for="m29">Tags set</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox" id="m30" onchange="updateCheck(this)"><label for="m30">End screens & cards configured</label><span class="owner-badge support">Support</span></div>
+    <div class="gate-card">
+      <h3>🚧 Gate 5: Thumbnail & title ready?</h3>
+      <p>18% test passed? Curiosity gap present? Thumb + title combo compelling?</p>
+      <div class="gate-decisions"><span class="g-go">✓ Go → Publish</span><span class="g-revise">↻ Rework thumb/title</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header" onclick="toggleStep(this)">
+    <span class="step-arrow">▶</span> 🚀 Phase 6: Publish
+  </div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox" id="m31" onchange="updateCheck(this)"><label for="m31">Video uploaded</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox" id="m32" onchange="updateCheck(this)"><label for="m32">Metadata double-checked</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox" id="m33" onchange="updateCheck(this)"><label for="m33">Schedule date/time set</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox" id="m34" onchange="updateCheck(this)"><label for="m34">Community post scheduled</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox" id="m35" onchange="updateCheck(this)"><label for="m35">Newsletter drafted & scheduled</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox" id="m36" onchange="updateCheck(this)"><label for="m36">Launch-day comments (first 2h)</label><span class="owner-badge lead">Lead</span></div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header" onclick="toggleStep(this)">
+    <span class="step-arrow">▶</span> 📈 Phase 7: Distribution & Growth
+  </div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox" id="m37" onchange="updateCheck(this)"><label for="m37">Shorts/clips cut & published</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox" id="m38" onchange="updateCheck(this)"><label for="m38">Community posts published</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox" id="m39" onchange="updateCheck(this)"><label for="m39">Newsletter sent</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox" id="m40" onchange="updateCheck(this)"><label for="m40">7-day performance check</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox" id="m41" onchange="updateCheck(this)"><label for="m41">28-day retrospective done</label><span class="owner-badge both">Both</span></div>
+    <div class="check-item"><input type="checkbox" id="m42" onchange="updateCheck(this)"><label for="m42">Learnings logged</label><span class="owner-badge both">Both</span></div>
+    <div class="gate-card">
+      <h3>🚧 Gate 6: Post-launch review</h3>
+      <p>CTR vs benchmark? AVD holding? Anything to fix?</p>
+      <div class="gate-decisions"><span class="g-go">✓ Archive & learn</span><span class="g-revise">↻ Update thumb/title</span></div>
+    </div>
+  </div>
+</div>
+`,
+
+ideation: `
+<div class="sop-header"><h2>💡 Phase 1: Ideation</h2></div>
+<div class="sop-meta">
+  <span class="meta-tag lead">Lead drives</span>
+  <span class="meta-tag ali">Ali assists (research)</span>
+  <span class="meta-tag time">⏱ 30-60 min per idea</span>
+</div>
+<p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:20px;">
+  <strong>Output:</strong> Validated topic in Idea Board with angle, hook hypothesis, and keyword data.
+</p>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 1. Source the Idea</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>Check Idea Board backlog for existing ideas</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Review recent comments for audience questions</label><span class="owner-badge both">Both</span></div>
+    <div class="check-item"><input type="checkbox"><label>Scan competitor channels — what's getting views?</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Check Google Trends / YouTube search suggestions</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>Review personal experience bank (BCG/Bain/JPM stories)</label><span class="owner-badge lead">Lead</span></div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 2. Define the Angle</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>What's our UNIQUE take? Not just "what" — "why us?"</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Who specifically watches this? (persona)</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>What's the emotional hook? (Curiosity? Fear? Aspiration?)</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>One-sentence pitch written</label><span class="owner-badge lead">Lead</span></div>
+    <div class="tip"><strong>Test:</strong> "This video is about _____ for people who _____" — if you can't fill this in clearly, the angle isn't sharp enough.</div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 3. Keyword & Trend Research</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>YouTube search autocomplete — note suggestions</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>Top 3 existing videos analyzed (views, date, gaps)</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>Pull analytics on similar past videos</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>Search vs Browse classification decided</label><span class="owner-badge lead">Lead</span></div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 4. Validate & Log</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>Fits channel positioning? (consulting × IB × career × money)</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Can we add value beyond what exists?</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Production effort estimated (Light / Medium / Heavy)</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Logged to Idea Board with all data</label><span class="owner-badge ali">Ali</span></div>
+  </div>
+</div>
+
+<div class="gate-card">
+  <h3>🚧 Gate 1: Worth Pursuing?</h3>
+  <p><strong>Decision maker:</strong> Lead (with Support input)</p>
+  <p><strong>Kill criteria (any = kill or backlog):</strong><br>
+  • Can't say anything the top 3 results don't already cover<br>
+  • Doesn't match our audience<br>
+  • Would require expertise we don't have<br>
+  • Too similar to a recent video (&lt; 3 months)</p>
+  <div class="gate-decisions"><span class="g-go">✓ Go → Pre-Production</span><span class="g-revise">↻ Backlog (tag reason)</span><span class="g-kill">✕ Kill (archive reason)</span></div>
+</div>
+`,
+
+preprod: `
+<div class="sop-header"><h2>📋 Phase 2: Pre-Production</h2></div>
+<div class="sop-meta">
+  <span class="meta-tag lead">Lead drives</span>
+  <span class="meta-tag support">Support reviews</span>
+  <span class="meta-tag ali">Ali: Research</span>
+  <span class="meta-tag time">⏱ 2-4 hours</span>
+</div>
+<p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:20px;">
+  <strong>Output:</strong> Approved outline/script, shot list, shoot logistics confirmed.
+</p>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 1. Research & Data Gathering</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>Lead defines key points / argument structure</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Support gathers supporting data, stats, examples</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Ali compiles research links, summarizes articles</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>Ali pulls analytics on similar past videos</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>All claims and numbers fact-checked</label><span class="owner-badge both">Both</span></div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 2. Script / Outline</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label><strong>Hook</strong> (0:00-0:30) — what grabs them?</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label><strong>Setup</strong> — why should they care?</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label><strong>Main content</strong> — 3-5 key points with examples</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label><strong>Payoff / CTA</strong> — what do they walk away with?</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>A-roll vs B-roll sections marked</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Support reviews outline & gives feedback</label><span class="owner-badge support">Support</span></div>
+    <div class="tip"><strong>Rule:</strong> First line of the video ≠ "Hey guys, welcome to our channel." Open with the hook.</div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 3. Hook Design</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>2-3 hook options written for first 30 seconds</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Honest test: Would YOU click away after hearing this?</label><span class="owner-badge both">Both</span></div>
+    <div class="check-item"><input type="checkbox"><label>Creates a curiosity gap or makes a bold claim</label><span class="owner-badge lead">Lead</span></div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 4. Shot List & Logistics</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>Every shot listed (talking head, B-roll, screens)</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Shoot date confirmed (calendar event)</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>Camera batteries charged</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>SD cards cleared & formatted</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Mic batteries / charged</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Lighting setup confirmed</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Location booked / confirmed</label><span class="owner-badge support">Support</span></div>
+  </div>
+</div>
+
+<div class="gate-card">
+  <h3>🚧 Gate 2: Plan Solid?</h3>
+  <p><strong>Decision maker:</strong> Lead (Support gives input)</p>
+  <p><strong>Rework triggers:</strong><br>
+  • Can't articulate the hook in one sentence<br>
+  • More than 5 key points (too unfocused)<br>
+  • Missing critical data or examples<br>
+  • Support can't follow the outline on first read</p>
+  <div class="gate-decisions"><span class="g-go">✓ Go → Shoot</span><span class="g-revise">↻ Rework</span><span class="g-kill">✕ Shelve</span></div>
+</div>
+`,
+
+production: `
+<div class="sop-header"><h2>🎥 Phase 3: Production</h2></div>
+<div class="sop-meta">
+  <span class="meta-tag lead">Lead: A-roll + direction</span>
+  <span class="meta-tag support">Support: B-roll + monitoring</span>
+  <span class="meta-tag time">⏱ 2-6 hours</span>
+</div>
+<p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:20px;">
+  <strong>Output:</strong> All footage captured, backed up, and quality-verified.
+</p>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> Pre-Shoot Setup (30 min before)</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>Camera positioned & framed (rule of thirds)</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Lighting set (key, fill, hair if available)</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Audio check — 10s test, play back, listen</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Background clean & on-brand</label><span class="owner-badge both">Both</span></div>
+    <div class="check-item"><input type="checkbox"><label>Outline visible to Lead</label><span class="owner-badge lead">Lead</span></div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> During Shoot — Lead</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>All A-roll segments filmed per outline</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Energy check: Am I engaged?</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Bad takes redone immediately</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>2-3 thumbnail reaction shots filmed</label><span class="owner-badge lead">Lead</span></div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> During Shoot — Support</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>Monitor audio levels on headphones</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>B-roll captured per shot list</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>BTS clips filmed (vertical for Shorts)</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Good moments timestamped</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Audio issues flagged in real-time</label><span class="owner-badge support">Support</span></div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> Post-Shoot (15 min after)</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>Files copied from SD card</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Files verified (spot-check 3 clips)</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Project folder created (a-roll/, b-roll/, audio/, bts/)</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Uploaded to Dropbox /Raw/EP##/</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Quick debrief: any concerns or missing shots?</label><span class="owner-badge both">Both</span></div>
+  </div>
+</div>
+
+<div class="gate-card">
+  <h3>🚧 Gate 3: Footage Usable?</h3>
+  <p><strong>Reshoot triggers:</strong><br>
+  • Audio unusable on key segments<br>
+  • Lead clearly low-energy / off-message<br>
+  • Critical talking point missed entirely<br>
+  • Camera malfunction on important sections</p>
+  <div class="gate-decisions"><span class="g-go">✓ Go → Edit</span><span class="g-revise">↻ Reshoot parts</span></div>
+</div>
+`,
+
+postprod: `
+<div class="sop-header"><h2>✂️ Phase 4: Post-Production</h2></div>
+<div class="sop-meta">
+  <span class="meta-tag lead">Lead: Main CapCut edit</span>
+  <span class="meta-tag support">Support: Subs + B-roll + QA</span>
+  <span class="meta-tag ali">Ali: Transcript + translations</span>
+  <span class="meta-tag time">⏱ 4-10 hours</span>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 1. Assembly Cut</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>All footage imported into CapCut</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Rough cut: A-roll in narrative order</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Dead air, ums, false starts removed</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Target length check (8-12 min short / 15-25 min deep)</label><span class="owner-badge lead">Lead</span></div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 2. B-Roll & Subtitles</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>B-roll inserted at marked points</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Screen recordings added</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Auto-captions generated in CapCut</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Manual correction pass (names, terms, English)</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Sub style check (font, size, position)</label><span class="owner-badge support">Support</span></div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 3. Audio & Music</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>Music selected (match energy to content)</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Voice: -6 to -3 dB</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Music: -18 to -12 dB (under voice)</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>No jarring volume changes between cuts</label><span class="owner-badge lead">Lead</span></div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 4. Pacing & Polish</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>Full 1x watch — note drag points</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Visual/audio change every 30s</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Intro tight (< 30s to hook)</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Outro/CTA clear (< 20s)</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Color correction consistent</label><span class="owner-badge lead">Lead</span></div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 5. QA & Translations</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>Support watches full video fresh as new viewer</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Feedback logged with timestamps [MM:SS]</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Lead addresses feedback</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Transcript generated</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>EN/KR/CN translations created</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>Final export (1080p/4K, H.264)</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Upload to Dropbox /Final/EP##/</label><span class="owner-badge support">Support</span></div>
+  </div>
+</div>
+
+<div class="gate-card">
+  <h3>🚧 Gate 4: Edit Approved?</h3>
+  <p><strong>Approval criteria:</strong><br>
+  • Both Lead & Support have watched full video<br>
+  • No outstanding QA issues<br>
+  • Pacing holds attention throughout<br>
+  • Audio clean and balanced<br>
+  • Subtitles accurate<br>
+  • Max 2 revision rounds</p>
+  <div class="gate-decisions"><span class="g-go">✓ Go → Package</span><span class="g-revise">↻ Revise</span></div>
+</div>
+`,
+
+packaging: `
+<div class="sop-header"><h2>🖼️ Phase 5: Packaging</h2></div>
+<div class="sop-meta">
+  <span class="meta-tag lead">Lead: Creative direction</span>
+  <span class="meta-tag support">Support: Tags + cards</span>
+  <span class="meta-tag ali">Ali: Multi-lang + SEO</span>
+  <span class="meta-tag time">⏱ 1-3 hours</span>
+</div>
+
+<div class="tip"><strong>📖 Reference:</strong> Always check <code>memory/thumbnail-principles.md</code> (Jon Youshaei framework) before thumbnail work.</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 1. Thumbnail</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>Re-read thumbnail-principles.md</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Check 3-5 competitor thumbnails on similar topics</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>3 elements max (more = clutter)</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Color contrast — complementary colors</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Curiosity gap — unanswered question visually</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Face with clear emotion visible</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Export 1280×720, < 2MB</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Passes 18% mobile size test</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Show to someone cold — would they click?</label><span class="owner-badge both">Both</span></div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 2. Title & Description</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>3 JP title options written</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Front-loaded hook (first 40 chars)</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Includes number if possible</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>JP description with timestamps</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>EN/KR/CN titles generated</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>EN/KR/CN descriptions generated</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>Translations logged to Google Sheet</label><span class="owner-badge ali">Ali</span></div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 3. Tags, Cards & End Screen</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>10-15 relevant tags (broad + specific mix)</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>SEO check done</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>End screen: best for viewer + subscribe</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Cards: max 2-3, at relevant moments</label><span class="owner-badge support">Support</span></div>
+  </div>
+</div>
+
+<div class="gate-card">
+  <h3>🚧 Gate 5: Thumbnail & Title Ready?</h3>
+  <p><strong>Must-pass:</strong><br>
+  • 18% test passed<br>
+  • Curiosity gap present<br>
+  • Thumb + title together tell a story<br>
+  • All metadata complete (JP + multi-lang)<br>
+  • End screens and cards configured</p>
+  <div class="gate-decisions"><span class="g-go">✓ Go → Publish</span><span class="g-revise">↻ Rework</span></div>
+</div>
+`,
+
+publish: `
+<div class="sop-header"><h2>🚀 Phase 6: Publish</h2></div>
+<div class="sop-meta">
+  <span class="meta-tag lead">Lead: Final sign-off</span>
+  <span class="meta-tag support">Support: Upload execution</span>
+  <span class="meta-tag ali">Ali: Newsletter + community</span>
+  <span class="meta-tag time">⏱ 30-60 min</span>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 1. Upload & Metadata</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>Final export uploaded to YouTube Studio</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Title (JP) — correct, no typos</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Description — timestamps, links, hashtags</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Tags all set</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Thumbnail uploaded & previewing correctly</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Category: Education / People & Blogs</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Language: Japanese</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>End screen + cards configured</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Multi-lang titles/descs added</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Made for kids: No</label><span class="owner-badge support">Support</span></div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 2. Schedule & Supporting Content</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>Publish date/time confirmed (Sat/Sun 18-20:00 JST)</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Premiere or instant publish decided</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Community post drafted & scheduled (T-2h)</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>Newsletter drafted & scheduled</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>Preview video page in incognito</label><span class="owner-badge lead">Lead</span></div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 3. Launch Day</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>T-2h: Community post goes up</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>T-0: Video live / premiere starts</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Lead online for first 2 hours</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Reply to every comment (first 2h)</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Heart/like viewer comments</label><span class="owner-badge both">Both</span></div>
+    <div class="check-item"><input type="checkbox"><label>Pin a comment (question or CTA)</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Newsletter sent</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>24h performance snapshot pulled</label><span class="owner-badge ali">Ali</span></div>
+  </div>
+</div>
+`,
+
+distribution: `
+<div class="sop-header"><h2>📈 Phase 7: Distribution & Growth</h2></div>
+<div class="sop-meta">
+  <span class="meta-tag support">Support: Clips + engagement</span>
+  <span class="meta-tag ali">Ali: Analytics + community</span>
+  <span class="meta-tag lead">Lead: Retro decisions</span>
+  <span class="meta-tag time">⏱ Ongoing (1-2 hrs/week)</span>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 1. Shorts & Clips (Week 1)</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>Watch full video → mark 3-5 standalone moments</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Cut clips vertically (9:16), 30-60s each</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Add captions/subtitles (required for Shorts)</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Hook text overlay in first 2 seconds</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Short 1: Day +1</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Short 2: Day +3</label><span class="owner-badge support">Support</span></div>
+    <div class="check-item"><input type="checkbox"><label>Short 3: Day +5</label><span class="owner-badge support">Support</span></div>
+    <div class="tip"><strong>Ali can help:</strong> Identifying timestamp-worthy moments from transcript, drafting Short descriptions</div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 2. Community Engagement</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>Reply to comments daily (first week)</label><span class="owner-badge lead">Lead</span></div>
+    <div class="check-item"><input type="checkbox"><label>Heart/like thoughtful comments</label><span class="owner-badge both">Both</span></div>
+    <div class="check-item"><input type="checkbox"><label>Day 0: Video announcement post</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>Day 3: BTS or follow-up question post</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>Day 7: Poll related to next video topic</label><span class="owner-badge ali">Ali</span></div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 3. Performance Review</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>7-day metrics pulled (views, CTR, AVD, subs)</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>Flag if CTR < 5% → consider thumb/title change</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>Flag if AVD < 40% → note pacing issue</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>28-day full report</label><span class="owner-badge ali">Ali</span></div>
+    <div class="check-item"><input type="checkbox"><label>Performance logged to experiments/metrics</label><span class="owner-badge ali">Ali</span></div>
+  </div>
+</div>
+
+<div class="step-section">
+  <div class="step-header open" onclick="toggleStep(this)"><span class="step-arrow">▶</span> 4. Retrospective (15 min)</div>
+  <div class="step-body">
+    <div class="check-item"><input type="checkbox"><label>Lead + Support sit down after 28-day data</label><span class="owner-badge both">Both</span></div>
+    <div class="check-item"><input type="checkbox"><label>Answer: What worked? (keep doing)</label><span class="owner-badge both">Both</span></div>
+    <div class="check-item"><input type="checkbox"><label>Answer: What didn't? (stop or change)</label><span class="owner-badge both">Both</span></div>
+    <div class="check-item"><input type="checkbox"><label>Answer: What to try next time? (one experiment)</label><span class="owner-badge both">Both</span></div>
+    <div class="check-item"><input type="checkbox"><label>Learnings logged to master checklist retro section</label><span class="owner-badge both">Both</span></div>
+    <div class="check-item"><input type="checkbox"><label>Insights fed back into ideation</label><span class="owner-badge both">Both</span></div>
+  </div>
+</div>
+
+<div class="gate-card">
+  <h3>🚧 Gate 6: Post-Launch Review</h3>
+  <p><strong>Update triggers:</strong><br>
+  • CTR below 5% after 7 days<br>
+  • AVD below 35%<br>
+  • Significantly underperforming similar past videos</p>
+  <div class="gate-decisions"><span class="g-go">✓ Archive & learn</span><span class="g-revise">↻ Update thumb/title (give 7 more days)</span></div>
+</div>
+`
+
+};
+
+function showPage(id) {
+  document.getElementById('main-content').innerHTML = pages[id] || '<p>Page not found</p>';
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  event.currentTarget?.classList?.add('active');
+  // open all step-headers by default
+  document.querySelectorAll('.step-header').forEach(h => h.classList.add('open'));
+  updateProgress();
+}
+
+function toggleStep(el) {
+  el.classList.toggle('open');
+}
+
+function updateCheck(cb) {
+  const label = cb.nextElementSibling;
+  if (cb.checked) label.classList.add('checked');
+  else label.classList.remove('checked');
+  updateProgress();
+}
+
+function updateProgress() {
+  const total = document.querySelectorAll('#main-content input[type="checkbox"]').length;
+  const checked = document.querySelectorAll('#main-content input[type="checkbox"]:checked').length;
+  if (total === 0) return;
+  const existing = document.querySelector('.progress-bar');
+  if (existing) {
+    existing.querySelector('.progress-fill').style.width = (checked/total*100)+'%';
+    existing.querySelector('.progress-label').textContent = checked + ' / ' + total + ' tasks complete';
+  }
+}
+
+// Init
+showPage('overview');
+</script>
+
+</body>
+</html>
