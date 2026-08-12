@@ -255,6 +255,43 @@ body {
 .mailto:hover,
 .mailto:focus-visible { color: var(--gold-bright); border-color: var(--gold); }
 
+/* ---------- figures ---------- */
+
+.stats { text-align: center; }
+
+.stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0.5rem clamp(1.5rem, 6vw, 3.25rem);
+}
+
+.stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+  letter-spacing: 0.02em;
+}
+
+.stat b {
+  font-family: var(--display);
+  font-size: clamp(1.25rem, 4vw, 1.65rem);
+  font-weight: 400;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-when {
+  margin-top: 0.85rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  opacity: 0.65;
+}
+
 /* ---------- footer ---------- */
 
 .foot {
@@ -283,6 +320,7 @@ a:focus-visible {
   .people          { animation-delay: 0.46s; }
   .podcast         { animation-delay: 0.56s; }
   .contact         { animation-delay: 0.62s; }
+  .stats           { animation-delay: 0.68s; }
 
   /* The label is the grid's first child, so match the articles by type. */
   .person .disc {
@@ -447,6 +485,16 @@ a:focus-visible {
       info@tonyandryo.com
     </a>
   </section>
+
+  <!-- stats:start — generated weekly by twc-launch/social-metrics; edits here are overwritten -->
+  <section class="stats rise" aria-label="数字">
+    <p class="stat-row">
+      <span class="stat"><b>15,239</b> <small>フォロワー</small></span>
+      <span class="stat"><b>512,542</b> <small>YouTube 総再生回数</small></span>
+    </p>
+    <p class="stat-when">2026年8月12日時点</p>
+  </section>
+  <!-- stats:end -->
 
   <hr class="rule">
 
